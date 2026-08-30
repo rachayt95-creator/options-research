@@ -34,11 +34,36 @@
       <label for="symbol">סימבול מניה</label>
       <input id="symbol" name="symbol" type="text" value="AAPL"
              placeholder="AAPL" dir="ltr" spellcheck="false" autocorrect="off"
-             autocapitalize="characters" enterkeyhint="search" required>
+             autocapitalize="characters" enterkeyhint="search"
+             autocomplete="off" required>
+      <div id="symbol-panel" class="picker" hidden>
+        <div id="symbol-list" class="picker-list"></div>
+      </div>
     </div>
+
     <div class="field">
-      <label for="target">תאריך יעד / פקיעה</label>
-      <input id="target" name="target" type="date" required>
+      <label for="date-btn">תאריך יעד / פקיעה</label>
+      <button type="button" id="date-btn" class="date-display">
+        <span id="date-text">—</span>
+        <span id="date-dte" class="dte">—</span>
+      </button>
+      <input type="hidden" id="target" name="target">
+
+      <div id="cal" class="picker cal" hidden>
+        <div class="cal-head">
+          <button type="button" class="cal-nav" data-nav="-1" aria-label="חודש קודם">‹</button>
+          <span id="cal-title"></span>
+          <button type="button" class="cal-nav" data-nav="1" aria-label="חודש הבא">›</button>
+        </div>
+        <div class="cal-dow"><i>א</i><i>ב</i><i>ג</i><i>ד</i><i>ה</i><i>ו</i><i>ש</i></div>
+        <div id="cal-grid" class="cal-grid"></div>
+        <div class="cal-quick">
+          <button type="button" data-days="7">שבוע</button>
+          <button type="button" data-days="30">חודש</button>
+          <button type="button" data-days="90">3 חודשים</button>
+        </div>
+        <p class="cal-note">ימי שישי מודגשים — רוב האופציות פוקעות בהם</p>
+      </div>
     </div>
     <button id="go" type="submit" class="primary">בצע ניתוח</button>
   </form>

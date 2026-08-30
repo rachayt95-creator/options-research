@@ -4,7 +4,10 @@ const $ = (id) => document.getElementById(id);
 const el = { form:$("form"), symbol:$("symbol"), target:$("target"), go:$("go"),
              error:$("error"), results:$("results"), news:$("news"),
              levels:$("levels"), chain:$("chain"), chainMeta:$("chain-meta"),
-             aiBody:$("ai-body"), netdot:$("netdot") };
+             aiBody:$("ai-body"), netdot:$("netdot"),
+             symPanel:$("symbol-panel"), symList:$("symbol-list"),
+             dateBtn:$("date-btn"), dateText:$("date-text"), dateDte:$("date-dte"),
+             cal:$("cal"), calTitle:$("cal-title"), calGrid:$("cal-grid") };
 
 let chainData = { calls: [], puts: [] };
 let spot = null;
@@ -205,9 +208,133 @@ document.querySelectorAll(".seg").forEach((btn) => {
 
 el.form.addEventListener("submit", analyze);
 
-const plus30 = new Date(Date.now() + 30 * 864e5);
-el.target.value = plus30.toISOString().slice(0, 10);
-el.target.min = new Date().toISOString().slice(0, 10);
+// ------------------------------------------------- בוחר סימבול
+
+const NASDAQ = [
+  ["AAPL", "Apple"], ["MSFT", "Microsoft"], ["NVDA", "NVIDIA"], ["AMZN", "Amazon"],
+  ["GOOGL", "Alphabet"], ["META", "Meta"], ["TSLA", "Tesla"], ["AVGO", "Broadcom"],
+  ["NFLX", "Netflix"], ["AMD", "AMD"], ["COST", "Costco"], ["ADBE", "Adobe"],
+  ["CSCO", "Cisco"], ["INTC", "Intel"], ["QCOM", "Qualcomm"], ["MU", "Micron"],
+  ["PLTR", "Palantir"], ["QQQ", "Nasdaq 100 ETF"],
+];
+
+function renderSymbols(filter = "") {
+  const f = filter.trim().toUpperCase();
+  const rows = NASDAQ.filter(([sym, co]) =>
+    !f || sym.includes(f) || co.toUpperCase().includes(f));
+
+  el.symList.innerHTML = rows.length
+    ? rows.map(([sym, co]) =>
+        `<button type="button" class="picker-item" data-sym="${sym}">
+           <span class="sym">${sym}</span><span class="co">${esc(co)}</span>
+         </button>`).join("")
+    : `<p class="picker-empty">אין התאמה ברשימה — אפשר להקליד כל סימבול</p>`;
+}
+
+const showSymbols = () => { renderSymbols(el.symbol.value); el.symPanel.hidden = false; };
+const hideSymbols = () => { el.symPanel.hidden = true; };
+
+el.symbol.addEventListener("focus", showSymbols);
+el.symbol.addEventListener("input", showSymbols);
+
+// pointerdown ולא click: מונע blur של השדה לפני שהבחירה נקלטת
+el.symList.addEventListener("pointerdown", (ev) => {
+  const btn = ev.target.closest(".picker-item");
+  if (!btn) return;
+  ev.preventDefault();
+  el.symbol.value = btn.dataset.sym;
+  hideSymbols();
+  el.symbol.blur();
+});
+
+// ------------------------------------------------- לוח שנה
+
+const MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
+                "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+
+// מקומי במכוון — toISOString היה מזיז יום אחורה באזור זמן שלפני UTC
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+let selected = midnight(new Date(Date.now() + 30 * 864e5));
+let view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+
+function syncDate() {
+  el.target.value = iso(selected);
+  el.dateText.textContent =
+    `${selected.getDate()} ב${MONTHS[selected.getMonth()]} ${selected.getFullYear()}`;
+  const dte = Math.round((selected - midnight(new Date())) / 864e5);
+  el.dateDte.textContent = `${dte} DTE`;
+}
+
+function renderCal() {
+  const today = midnight(new Date());
+  const y = view.getFullYear(), m = view.getMonth();
+  el.calTitle.textContent = `${MONTHS[m]} ${y}`;
+
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const cells = [];
+
+  for (let i = 0; i < first; i++) cells.push(`<button class="cal-day blank" disabled></button>`);
+
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(y, m, d);
+    const cls = ["cal-day"];
+    if (date.getDay() === 5) cls.push("friday");     // רוב האופציות פוקעות בשישי
+    if (+date === +today) cls.push("today");
+    if (+date === +selected) cls.push("sel");
+    cells.push(
+      `<button type="button" class="${cls.join(" ")}" data-d="${iso(date)}"${
+        date < today ? " disabled" : ""}>${d}</button>`);
+  }
+
+  el.calGrid.innerHTML = cells.join("");
+  el.cal.querySelector('[data-nav="-1"]').disabled =
+    y === today.getFullYear() && m === today.getMonth();
+}
+
+const showCal = () => { renderCal(); el.cal.hidden = false; };
+const hideCal = () => { el.cal.hidden = true; };
+
+el.dateBtn.addEventListener("click", () => {
+  hideSymbols();
+  el.cal.hidden ? showCal() : hideCal();
+});
+
+el.cal.addEventListener("click", (ev) => {
+  const nav = ev.target.closest(".cal-nav");
+  if (nav) {
+    view = new Date(view.getFullYear(), view.getMonth() + Number(nav.dataset.nav), 1);
+    renderCal();
+    return;
+  }
+
+  const quick = ev.target.closest("[data-days]");
+  if (quick) {
+    selected = midnight(new Date(Date.now() + Number(quick.dataset.days) * 864e5));
+    view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+    syncDate();
+    hideCal();
+    return;
+  }
+
+  const day = ev.target.closest(".cal-day[data-d]");
+  if (day && !day.disabled) {
+    const [yy, mm, dd] = day.dataset.d.split("-").map(Number);
+    selected = new Date(yy, mm - 1, dd);
+    syncDate();
+    hideCal();
+  }
+});
+
+// סגירה בנגיעה מחוץ לחלוניות
+document.addEventListener("pointerdown", (ev) => {
+  if (!ev.target.closest("#symbol-panel, #symbol")) hideSymbols();
+  if (!ev.target.closest("#cal, #date-btn")) hideCal();
+});
+
+syncDate();
 
 const netState = () => el.netdot.classList.toggle("off", !navigator.onLine);
 addEventListener("online", netState);

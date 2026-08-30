@@ -46,7 +46,86 @@ main { max-width:640px; margin:0 auto; padding:1rem .9rem 0; }
 .tiny { font-size:.82rem; }
 
 /* ---------- טופס ---------- */
-.field { margin-bottom:.85rem; }
+.field { margin-bottom:.85rem; position:relative; }
+
+/* ---------- חלוניות בחירה (סימבול + לוח שנה) ---------- */
+.picker {
+  position:absolute; z-index:30; inset-inline:0; top:calc(100% + .35rem);
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.55);
+  overflow:hidden;
+}
+.picker-list { max-height:44vh; overflow-y:auto; overscroll-behavior:contain; }
+.picker-item {
+  display:flex; align-items:center; justify-content:space-between; gap:.8rem;
+  width:100%; min-height:48px; padding:.55rem .85rem;
+  background:transparent; border:0; border-bottom:1px solid var(--border);
+  color:var(--text); font-family:inherit; font-size:.95rem; text-align:right;
+  touch-action:manipulation;
+}
+.picker-item:last-child { border-bottom:0; }
+.picker-item:active { background:rgba(240,180,41,.12); }
+.picker-item .sym { font-weight:700; direction:ltr; letter-spacing:.05em; color:var(--amber); }
+.picker-item .co  { color:var(--muted); font-size:.85rem; }
+.picker-empty { padding:1rem .85rem; color:var(--muted); font-size:.9rem; }
+
+/* ---------- כפתור התאריך ---------- */
+.date-display {
+  display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  width:100%; min-height:48px; padding:.6rem .8rem;
+  background:var(--surface-2); border:1px solid var(--border); border-radius:12px;
+  color:var(--text); font-family:inherit; font-size:16px; text-align:right;
+  touch-action:manipulation;
+}
+.date-display:active { border-color:var(--amber); }
+.date-display .dte {
+  color:var(--amber); font-size:.82rem; font-weight:700;
+  direction:ltr; white-space:nowrap;
+}
+
+/* ---------- לוח שנה ---------- */
+.cal { padding:.7rem; }
+.cal-head {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:.5rem; font-weight:700;
+}
+.cal-nav {
+  width:38px; height:38px; border-radius:10px;
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--text); font-size:1.2rem; line-height:1;
+  font-family:inherit; touch-action:manipulation;
+}
+.cal-nav:active { background:rgba(240,180,41,.15); }
+.cal-nav:disabled { opacity:.3; }
+.cal-dow, .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.cal-dow { margin-bottom:.25rem; }
+.cal-dow i {
+  font-style:normal; text-align:center; font-size:.75rem; color:var(--muted);
+}
+.cal-day {
+  aspect-ratio:1; min-height:40px; border:0; border-radius:9px;
+  background:var(--surface); color:var(--text);
+  font-family:inherit; font-size:.9rem; font-variant-numeric:tabular-nums;
+  touch-action:manipulation;
+}
+.cal-day.blank { background:transparent; }
+.cal-day.friday { box-shadow:inset 0 0 0 1px rgba(240,180,41,.4); }
+.cal-day.today  { color:var(--amber); font-weight:700; }
+.cal-day.sel    { background:var(--amber); color:#12151B; font-weight:700; }
+.cal-day:disabled { opacity:.25; }
+.cal-quick {
+  display:flex; gap:5px; margin-top:.6rem;
+}
+.cal-quick button {
+  flex:1; min-height:40px; border-radius:10px;
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--text); font-family:inherit; font-size:.85rem;
+  touch-action:manipulation;
+}
+.cal-quick button:active { background:rgba(240,180,41,.15); }
+.cal-note {
+  margin:.55rem 0 0; font-size:.72rem; color:var(--muted); text-align:center;
+}
 .field label { display:block; margin-bottom:.35rem; font-size:.9rem; color:var(--muted); }
 input[type=text], input[type=date] {
   width:100%; min-height:48px; padding:.6rem .8rem;
