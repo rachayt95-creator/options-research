@@ -55,7 +55,11 @@ main { max-width:640px; margin:0 auto; padding:1rem .9rem 0; }
   border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.55);
   overflow:hidden;
 }
-.picker-list { max-height:44vh; overflow-y:auto; overscroll-behavior:contain; }
+/* 34vh ולא יותר: עם מקלדת פתוחה בנייד, רשימה גבוהה יותר נחתכת מתחתיה */
+.picker-list {
+  max-height:34vh; overflow-y:auto;
+  overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+}
 .picker-item {
   display:flex; align-items:center; justify-content:space-between; gap:.8rem;
   width:100%; min-height:48px; padding:.55rem .85rem;

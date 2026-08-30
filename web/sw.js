@@ -1,5 +1,5 @@
 // גרסה זו נדרשת כדי לפנות מטמונים ישנים. יש להעלות אותה כשמשתנה מעטפת האפליקציה.
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = `optiradar-${VERSION}`;
 
 const SHELL = [

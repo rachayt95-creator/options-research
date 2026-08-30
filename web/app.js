@@ -244,12 +244,27 @@ const hideSymbols = () => { el.symPanel.hidden = true; };
 el.symbol.addEventListener("focus", showSymbols);
 el.symbol.addEventListener("input", showSymbols);
 
-// pointerdown ולא click: מונע blur של השדה לפני שהבחירה נקלטת
+// הבחירה מוכרעת רק ב-pointerup, ורק אם האצבע כמעט לא זזה.
+// preventDefault ב-pointerdown היה מבטל את מחוות הגלילה, וכל ניסיון
+// לגלול נחשב לבחירה. היעד נלקח מרגע הנגיעה ולא מרגע השחרור, כי
+// סגירת המקלדת מזיזה את הפריסה ועלולה להחליף את האלמנט שמתחת לאצבע.
+const TAP_SLOP = 10;
+let tapStart = null;
+
 el.symList.addEventListener("pointerdown", (ev) => {
   const btn = ev.target.closest(".picker-item");
-  if (!btn) return;
-  ev.preventDefault();
-  el.symbol.value = btn.dataset.sym;
+  tapStart = btn ? { btn, x: ev.clientX, y: ev.clientY } : null;
+});
+
+el.symList.addEventListener("pointercancel", () => { tapStart = null; });
+
+el.symList.addEventListener("pointerup", (ev) => {
+  const start = tapStart;
+  tapStart = null;
+  if (!start) return;
+  if (Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > TAP_SLOP) return;  // גלילה
+
+  el.symbol.value = start.btn.dataset.sym;
   hideSymbols();
   el.symbol.blur();
 });
