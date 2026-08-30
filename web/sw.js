@@ -1,5 +1,5 @@
 // גרסה זו נדרשת כדי לפנות מטמונים ישנים. יש להעלות אותה כשמשתנה מעטפת האפליקציה.
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `optiradar-${VERSION}`;
 
 const SHELL = [
@@ -28,17 +28,26 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET" || url.pathname.includes("/api/")) return;
   if (url.origin !== location.origin) return;
 
-  // ניווט: רשת קודם. כך פריסה חדשה נתפסת בטעינה הראשונה ולא נתקעת
-  // על גרסה ישנה, וגם במצב לא-מקוון עדיין נפתחת המעטפת השמורה.
+  // ניווט: רשת קודם, אבל עם תקרת המתנה.
+  //
+  // השרת בשכבה החינמית נרדם, וההתעוררות אורכת עד דקה. בלי התקרה
+  // המשתמש היה בוהה בעמוד ההמתנה של הספק. עכשיו: אם הרשת לא ענתה
+  // תוך 2.5 שניות מגישים את המעטפת השמורה, האפליקציה נפתחת מיד,
+  // והתשובה מהרשת ממשיכה להתעדכן במטמון ברקע לטעינה הבאה.
   if (e.request.mode === "navigate") {
     e.respondWith(
-      fetch(e.request)
-        .then((res) => {
+      caches.match("./index.html").then((cached) => {
+        const network = fetch(e.request).then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put("./index.html", copy));
           return res;
-        })
-        .catch(() => caches.match("./index.html").then((hit) => hit || caches.match("./")))
+        });
+        if (!cached) return network.catch(() => caches.match("./"));
+        return Promise.race([
+          network.catch(() => cached),
+          new Promise((done) => setTimeout(() => done(cached), 2500)),
+        ]);
+      })
     );
     return;
   }

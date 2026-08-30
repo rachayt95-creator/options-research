@@ -168,6 +168,11 @@ async function analyze(ev) {
   el.go.disabled = true;
   el.go.textContent = "טוען…";
 
+  // השרת בשכבה החינמית נרדם. אם התשובה מתעכבת, מסבירים במקום להשאיר מסך תקוע
+  const waking = setTimeout(() => {
+    showError("השרת מתעורר משינה — זה לוקח עד דקה בפעם הראשונה.", true);
+  }, 4000);
+
   try {
     const res = await fetch(`api/analyze?symbol=${encodeURIComponent(symbol)}&date=${date}`);
     const data = await res.json();
@@ -183,12 +188,14 @@ async function analyze(ev) {
       : `פקיעה ${data.expiry} · הקרובה ביותר ל-${data.requestedDate}`;
     renderChain(document.querySelector(".seg.on").dataset.side);
 
+    el.error.hidden = true;               // מסיר את הודעת ההתעוררות אם הופיעה
     el.results.hidden = false;
     loadReport(symbol, date);             // הדוח נטען אחרי הנתונים, לא חוסם
   } catch (err) {
     el.results.hidden = true;
     showError(err.message || "שגיאה לא צפויה.");
   } finally {
+    clearTimeout(waking);
     el.go.disabled = false;
     el.go.textContent = "בצע ניתוח";
   }
