@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+
+<!-- אלה יושבות כאן, ב-head אמיתי. אין iframe ואין הזרקה. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מחקר אופציות">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0B0E14">
+<meta name="color-scheme" content="dark">
+
+<title>מערכת מחקר אופציות</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="icons/icon-192.png" alt="" width="26" height="26">
+    <span>מחקר אופציות</span>
+  </div>
+  <span id="netdot" class="netdot" title="מצב חיבור"></span>
+</header>
+
+<main>
+  <form id="form" class="card search" autocomplete="off">
+    <div class="field">
+      <label for="symbol">סימבול מניה</label>
+      <input id="symbol" name="symbol" type="text" value="AAPL"
+             placeholder="AAPL" dir="ltr" spellcheck="false"
+             autocapitalize="characters" enterkeyhint="search" required>
+    </div>
+    <div class="field">
+      <label for="target">תאריך יעד / פקיעה</label>
+      <input id="target" name="target" type="date" required>
+    </div>
+    <button id="go" type="submit" class="primary">בצע ניתוח</button>
+  </form>
+
+  <p id="error" class="alert" hidden></p>
+
+  <section id="results" hidden>
+
+    <section class="card hero">
+      <div class="hero-head">
+        <div>
+          <h1 id="h-symbol">—</h1>
+          <p id="h-name" class="muted">—</p>
+        </div>
+        <span id="h-change" class="chip">—</span>
+      </div>
+      <div class="price" id="h-price">—</div>
+      <p class="muted tiny" id="h-meta">—</p>
+    </section>
+
+    <section class="card">
+      <h2>רמות תמיכה והתנגדות</h2>
+      <ul id="levels" class="ladder"></ul>
+    </section>
+
+    <section class="card" id="ai-card">
+      <h2>דוח אנליסט</h2>
+      <div id="ai-body"></div>
+    </section>
+
+    <section class="card">
+      <h2>שרשרת אופציות</h2>
+      <p class="muted tiny" id="chain-meta">—</p>
+      <div class="segmented" role="tablist">
+        <button role="tab" class="seg on" data-side="calls" aria-selected="true">CALL</button>
+        <button role="tab" class="seg" data-side="puts" aria-selected="false">PUT</button>
+      </div>
+      <div class="scroll-x">
+        <table id="chain"><thead></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>חדשות אחרונות</h2>
+      <ul id="news" class="news"></ul>
+    </section>
+
+  </section>
+
+  <p class="disclaimer">מחקר בלבד. אינו מהווה ייעוץ השקעות.</p>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

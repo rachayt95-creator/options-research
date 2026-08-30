@@ -1,95 +1,100 @@
 # 📈 מערכת מחקר אופציות
 
-אפליקציית Streamlit בעברית לניתוח מניות ואופציות: שולפת נתוני מסחר, רמות
-תמיכה/התנגדות, חדשות ושרשרת אופציות מ-yfinance, ומפיקה דוח אנליסט בעברית
-באמצעות Google Gemini. הממשק מותאם לנייד ולהתקנה כ-PWA במכשירי iOS.
+ניתוח מניות ואופציות בעברית: נתוני מסחר, רמות תמיכה/התנגדות, חדשות ושרשרת
+אופציות מ-yfinance, ודוח אנליסט שנכתב על ידי Google Gemini.
 
-## מבנה הפרויקט
+לפרויקט **שני ממשקים מעל אותה לוגיקה**:
+
+| | קובץ | מתי להשתמש |
+|---|---|---|
+| 🚀 **אפליקציה** | `api/` + `web/` | חוויית PWA מלאה, נייד. ההמלצה. |
+| 🧪 **Streamlit** | `app.py` | פרוטוטייפ מהיר, בדיקות נתונים |
 
 ```
-app.py                            כל הלוגיקה והממשק
-requirements.txt                  תלויות
-.streamlit/config.toml            ערכת נושא כהה
-.streamlit/secrets.toml.template  תבנית למפתח ה-API
-.streamlit/secrets.toml           המפתח האמיתי — לא עולה ל-git
+research.py          כל הלוגיקה — yfinance + Gemini. ללא תלות בממשק.
+api/main.py          FastAPI: JSON + הגשת הפרונט
+web/                 PWA: HTML/CSS/JS, service worker, manifest, אייקונים
+app.py               גרסת Streamlit (עוטפת את research.py)
 ```
 
-## הרצה מקומית
+`research.py` הוא מקור אמת אחד — שני הממשקים קוראים לו, ואין שני עותקים של
+הלוגיקה שיכולים להיפרד זה מזה.
+
+## הרצה
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
+export GEMINI_API_KEY="..."        # מפתח חינמי: https://aistudio.google.com/apikey
 
-cp .streamlit/secrets.toml.template .streamlit/secrets.toml
-# ערוך את הקובץ והכנס מפתח מ-https://aistudio.google.com/apikey
-
-.venv/bin/streamlit run app.py
+.venv/bin/uvicorn api.main:app --reload --port 8000
 ```
 
-לחלופין, במקום קובץ הסודות: `export GEMINI_API_KEY="..."`.
+פתח http://localhost:8000 — זו האפליקציה.
+לגרסת Streamlit: `.venv/bin/streamlit run app.py`.
 
----
+### התקנה כאפליקציה באייפון
 
-## שלב 1 — העלאה ל-GitHub
+פתח את הכתובת ב-Safari ➜ שתף ➜ **הוסף למסך הבית**. היא תיפתח במסך מלא, בלי
+שורת כתובת, עם אייקון משלה ועם מעטפת שנשמרת במטמון כך שהפתיחה מיידית.
+לשם כך נדרש **HTTPS** — כלומר לאחר פריסה, לא מ-localhost.
 
-צור מאגר **ריק** בכתובת https://github.com/new (בלי README ובלי .gitignore —
-הם כבר קיימים כאן), ואז מתוך תיקיית הפרויקט:
+## API
+
+| נתיב | תיאור |
+|---|---|
+| `GET /api/analyze?symbol=AAPL&date=2026-09-29` | מחיר, רמות, חדשות ושרשרת אופציות |
+| `GET /api/report?symbol=AAPL&date=2026-09-29` | דוח האנליסט מ-Gemini |
+| `GET /api/health` | בדיקת חיים + האם מוגדר מפתח |
+| `GET /api/docs` | תיעוד אינטראקטיבי |
+
+הנתונים נשמרים במטמון ל-5 דקות והדוח ל-30 דקות, כדי לחסוך במכסת ה-API החינמית.
+
+## העלאה ל-GitHub
+
+צור מאגר **ריק** ב-https://github.com/new (בלי README ובלי .gitignore), ואז:
 
 ```bash
-git init
-git add .
-git commit -m "מערכת מחקר אופציות"
-git branch -M main
-git remote add origin https://github.com/<שם-המשתמש>/<שם-המאגר>.git
+git remote add origin https://github.com/<שם-משתמש>/<מאגר>.git
 git push -u origin main
 ```
 
-לפני ה-push, ודא שהמפתח לא נכלל:
+`.gitignore` מחריג את `.venv/` ואת `.streamlit/secrets.toml`. ודא לפני דחיפה:
 
 ```bash
-git status --porcelain | grep secrets.toml   # לא אמור להחזיר כלום
+git status --porcelain | grep secrets.toml    # לא אמור להחזיר כלום
 ```
 
-הקובץ `.gitignore` כבר מחריג את `.venv/`, את `__pycache__/` ואת
-`.streamlit/secrets.toml`. **התבנית** (`secrets.toml.template`) כן נכנסת
-למאגר — היא לא מכילה מפתח.
+## פריסה
 
-המאגר יכול להיות ציבורי או פרטי; ב-Streamlit Cloud החינמי שניהם נתמכים.
+### את האפליקציה — Render (שכבה חינמית)
 
-## שלב 2 — פריסה ל-Streamlit Community Cloud
+1. https://render.com ➜ התחבר עם GitHub ➜ **New ➜ Web Service**.
+2. בחר את המאגר.
+3. הגדרות:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+4. **Environment ➜ Add Environment Variable**: `GEMINI_API_KEY` = המפתח שלך.
+5. **Create Web Service**. בסיום תקבל כתובת `https://<שם>.onrender.com` עם
+   HTTPS — ומשם אפשר להתקין למסך הבית.
 
-1. היכנס ל-https://share.streamlit.io והתחבר עם חשבון ה-GitHub שלך.
-2. בפעם הראשונה אשר ל-Streamlit גישה למאגרים (`Authorize`). למאגר פרטי יש
-   לאשר גם את הרשאת ה-private repositories.
-3. לחץ **Create app** ובחר **Deploy a public app from GitHub**.
-4. מלא את הפרטים:
-   - **Repository**: `<שם-המשתמש>/<שם-המאגר>`
-   - **Branch**: `main`
-   - **Main file path**: `app.py`
-   - **App URL**: הכתובת שתקבל, בפורמט `<שם>.streamlit.app`
-5. פתח **Advanced settings ➜ Secrets** והדבק שורה אחת:
+> בשכבה החינמית השירות נרדם אחרי 15 דקות חוסר פעילות, והבקשה הראשונה
+> לאחר מכן אורכת כדקה.
 
-   ```toml
-   GEMINI_API_KEY = "AIza-המפתח-שלך"
-   ```
+### את גרסת Streamlit — Streamlit Community Cloud
 
-   הסודות נשמרים אצל Streamlit ואינם עוברים דרך המאגר. `st.secrets` באפליקציה
-   יקרא אותם בדיוק כמו מקובץ מקומי.
-6. ב-**Advanced settings** בחר גם **Python 3.11** ומעלה.
-7. לחץ **Deploy**. הבנייה נמשכת 2-4 דקות; בסיום האפליקציה זמינה בכתובת
-   `https://<שם>.streamlit.app`.
+https://share.streamlit.io ➜ **Create app** ➜ בחר את המאגר, ענף `main`,
+**Main file path** = `app.py`, וב-**Advanced settings ➜ Secrets** הדבק:
 
-### עדכון האפליקציה
+```toml
+GEMINI_API_KEY = "AIza-המפתח-שלך"
+```
 
-כל `git push` ל-`main` מפעיל פריסה מחדש אוטומטית. לשינוי מפתח ה-API אין צורך
-ב-push — רק **App settings ➜ Secrets ➜ Save**, והאפליקציה תופעל מחדש.
+## מגבלות ידועות
 
-### תקלות נפוצות
-
-| תופעה | סיבה וטיפול |
-|---|---|
-| האזהרה "לא נמצא מפתח GEMINI_API_KEY" | הסוד לא הוגדר, או שהודבק בלי מירכאות. בדוק ב-App settings ➜ Secrets. |
-| "לא נמצאו נתוני מסחר עבור הסימבול" | Yahoo Finance מגביל לעיתים בקשות מכתובות IP של שרתי ענן. נסה שוב מאוחר יותר. |
-| האפליקציה נרדמת | אפליקציות חינמיות נכנסות לשינה אחרי חוסר פעילות; הכניסה הראשונה מעירה אותן תוך כדקה. |
+- Yahoo Finance מגביל בקשות מכתובות IP של ספקי ענן. ייתכנו כשלי שליפה
+  בפריסה שעובדים מצוין מקומית.
+- Yahoo אינו שולח הידרי CORS, ולכן חובה שרת באמצע — אי אפשר לבנות את זה
+  כאתר סטטי בלבד.
 
 > מחקר בלבד. אינו מהווה ייעוץ השקעות.

@@ -1,4 +1,12 @@
-streamlit>=1.50
+# ליבה — משותף לשני הממשקים
 yfinance>=1.2.0
 requests>=2.32
 google-genai>=1.40
+pandas>=2.0
+
+# ממשק א' — האפליקציה (FastAPI + PWA)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+
+# ממשק ב' — הגרסה המקורית ב-Streamlit
+streamlit>=1.50

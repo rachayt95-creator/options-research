@@ -1,0 +1,181 @@
+:root {
+  --bg:#0B0E14; --surface:#161B22; --surface-2:#1C232D;
+  --border:#2A313C; --text:#E6EDF3; --muted:#8B98A9;
+  --amber:#F0B429; --green:#16A34A; --red:#DC2626; --blue:#58A6FF;
+  --radius:14px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html { -webkit-text-size-adjust:100%; }
+
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Hebrew","Assistant","Segoe UI",system-ui,sans-serif;
+  font-size:16px; line-height:1.6;
+  overscroll-behavior-y:none;           /* בלי גרירת גומי — מרגיש כמו אפליקציה */
+  padding-bottom:calc(2rem + var(--safe-bottom));
+}
+
+/* ---------- סרגל עליון ---------- */
+.topbar {
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:.6rem; padding:calc(.7rem + var(--safe-top)) 1rem .7rem;
+  background:rgba(11,14,20,.82);
+  backdrop-filter:saturate(180%) blur(14px);
+  -webkit-backdrop-filter:saturate(180%) blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.brand { display:flex; align-items:center; gap:.55rem; font-weight:700; }
+.brand img { border-radius:6px; }
+.netdot { width:9px; height:9px; border-radius:50%; background:var(--green); }
+.netdot.off { background:var(--red); }
+
+main { max-width:640px; margin:0 auto; padding:1rem .9rem 0; }
+
+/* ---------- כרטיסים ---------- */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1rem; margin-bottom:.9rem;
+}
+.card h2 { margin:0 0 .8rem; font-size:1.05rem; font-weight:700; }
+.muted { color:var(--muted); }
+.tiny { font-size:.82rem; }
+
+/* ---------- טופס ---------- */
+.field { margin-bottom:.85rem; }
+.field label { display:block; margin-bottom:.35rem; font-size:.9rem; color:var(--muted); }
+input[type=text], input[type=date] {
+  width:100%; min-height:48px; padding:.6rem .8rem;
+  font-size:16px;                      /* מתחת ל-16px iOS מזים בפוקוס */
+  font-family:inherit; color:var(--text);
+  background:var(--surface-2); border:1px solid var(--border);
+  border-radius:12px; outline:none;
+}
+input:focus { border-color:var(--amber); box-shadow:0 0 0 3px rgba(240,180,41,.16); }
+#symbol { letter-spacing:.08em; font-weight:600; }
+
+button.primary {
+  width:100%; min-height:50px; font-size:1.02rem; font-weight:700;
+  font-family:inherit; color:#12151B; background:var(--amber);
+  border:0; border-radius:12px; touch-action:manipulation;
+  transition:transform .07s ease, opacity .2s ease;
+}
+button.primary:active { transform:scale(.985); }
+button.primary:disabled { opacity:.55; }
+
+/* ---------- כותרת מחיר ---------- */
+.hero-head { display:flex; align-items:flex-start; justify-content:space-between; gap:.8rem; }
+.hero h1 { margin:0; font-size:1.5rem; letter-spacing:.04em; }
+.hero .muted { margin:.15rem 0 0; font-size:.9rem; }
+.price {
+  font-size:2.5rem; font-weight:700; margin:.5rem 0 .2rem;
+  font-variant-numeric:tabular-nums; direction:ltr; text-align:right;
+}
+.chip {
+  padding:.3rem .7rem; border-radius:999px; font-weight:700; font-size:.9rem;
+  direction:ltr; white-space:nowrap; font-variant-numeric:tabular-nums;
+  background:rgba(139,152,169,.15); color:var(--muted);
+}
+.chip.up   { background:rgba(22,163,74,.16);  color:#3FD37B; }
+.chip.down { background:rgba(220,38,38,.16);  color:#F87171; }
+
+/* ---------- סולם רמות ---------- */
+.ladder { list-style:none; margin:0; padding:0; }
+.ladder li { padding:.55rem 0; border-bottom:1px solid var(--border); }
+.ladder li:last-child { border-bottom:0; }
+.ladder .row { display:flex; align-items:baseline; justify-content:space-between; gap:.7rem; }
+.ladder .name { font-size:.92rem; }
+.ladder .val { font-variant-numeric:tabular-nums; direction:ltr; font-weight:600; }
+.ladder .dist { font-size:.8rem; direction:ltr; font-variant-numeric:tabular-nums; }
+.ladder .bar { height:3px; border-radius:2px; margin-top:.4rem; background:var(--surface-2); overflow:hidden; }
+.ladder .bar span { display:block; height:100%; border-radius:2px; }
+.ladder li.now { background:rgba(240,180,41,.07); border-radius:8px; padding-inline:.5rem; }
+.ladder li.now .name { color:var(--amber); font-weight:700; }
+.up-c { color:#3FD37B; } .down-c { color:#F87171; }
+
+/* ---------- בקרה מפולחת ---------- */
+.segmented {
+  display:flex; gap:4px; padding:4px; margin:.2rem 0 .8rem;
+  background:var(--surface-2); border-radius:12px;
+}
+.seg {
+  flex:1; min-height:42px; border:0; border-radius:9px;
+  background:transparent; color:var(--muted);
+  font-family:inherit; font-size:.95rem; font-weight:700; letter-spacing:.05em;
+  touch-action:manipulation; transition:background .15s ease, color .15s ease;
+}
+.seg.on { background:var(--surface); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.35); }
+
+/* ---------- טבלה ---------- */
+.scroll-x { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+table { width:100%; border-collapse:collapse; direction:ltr; font-size:.86rem; }
+th, td {
+  padding:.5rem .55rem; text-align:right; white-space:nowrap;
+  font-variant-numeric:tabular-nums; border-bottom:1px solid var(--border);
+}
+th { color:var(--muted); font-weight:600; font-size:.78rem; position:sticky; top:0; background:var(--surface); }
+tbody tr.atm { background:rgba(240,180,41,.09); }
+tbody tr.atm td:first-child { color:var(--amber); font-weight:700; }
+
+/* ---------- חדשות ---------- */
+.news { list-style:none; margin:0; padding:0; }
+.news li { border-bottom:1px solid var(--border); }
+.news li:last-child { border-bottom:0; }
+.news a {
+  display:block; padding:.75rem 0; color:var(--text); text-decoration:none;
+  transition:opacity .15s ease;
+}
+.news a:active { opacity:.6; }
+.news .t { font-size:.94rem; line-height:1.5; }
+.news .m { margin-top:.3rem; font-size:.78rem; color:var(--muted); }
+
+/* ---------- דוח AI ---------- */
+.badge {
+  display:inline-block; padding:.35rem 1rem; border-radius:999px;
+  font-weight:700; font-size:.95rem; margin-bottom:.6rem;
+}
+.badge.up   { background:rgba(22,163,74,.15);  color:#3FD37B; border:1px solid rgba(22,163,74,.35); }
+.badge.down { background:rgba(220,38,38,.15);  color:#F87171; border:1px solid rgba(220,38,38,.35); }
+.badge.flat { background:rgba(139,152,169,.15); color:var(--muted); border:1px solid rgba(139,152,169,.3); }
+.report h3 {
+  font-size:1rem; margin:1.1rem 0 .4rem; padding-bottom:.3rem;
+  border-bottom:1px solid var(--border); color:var(--amber);
+}
+.report h3:first-child { margin-top:0; }
+.report ul { margin:.3rem 0; padding-right:1.15rem; padding-left:0; }
+.report li { margin-bottom:.45rem; }
+.report p { margin:.4rem 0; }
+
+/* ---------- מצבי טעינה ---------- */
+.skeleton { background:var(--surface-2); border-radius:8px; overflow:hidden; position:relative; }
+.skeleton::after {
+  content:""; position:absolute; inset:0; transform:translateX(100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent);
+  animation:shimmer 1.3s infinite;
+}
+@keyframes shimmer { to { transform:translateX(-100%); } }
+.sk-line { height:13px; margin-bottom:.55rem; }
+.sk-line.w60 { width:60%; } .sk-line.w80 { width:80%; } .sk-line.w40 { width:40%; }
+
+.alert {
+  background:rgba(220,38,38,.12); border:1px solid rgba(220,38,38,.35);
+  color:#F87171; padding:.8rem 1rem; border-radius:12px; margin:0 0 .9rem;
+  font-size:.92rem;
+}
+.alert.warn { background:rgba(240,180,41,.1); border-color:rgba(240,180,41,.35); color:var(--amber); }
+
+.disclaimer { text-align:center; color:var(--muted); font-size:.78rem; margin:1.5rem 0 0; }
+
+#results > section { animation:rise .3s ease both; }
+#results > section:nth-child(2) { animation-delay:.04s; }
+#results > section:nth-child(3) { animation-delay:.08s; }
+#results > section:nth-child(4) { animation-delay:.12s; }
+@keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+@media (prefers-reduced-motion:reduce) {
+  * { animation:none !important; transition:none !important; }
+}
