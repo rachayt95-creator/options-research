@@ -1,0 +1,28 @@
+# ערכת נושא כהה לסוחרים — צבעים סמנטיים תואמים לתגיות הסנטימנט שב-app.py
+[theme]
+base = "dark"
+
+backgroundColor          = "#0B0E14"   # רקע ראשי — כהה מאוד, נוח למסכי מסחר ממושכים
+secondaryBackgroundColor = "#161B22"   # כרטיסים, טבלאות וכותרות עמודות
+textColor                = "#E6EDF3"
+primaryColor             = "#F0B429"   # ענבר: בולט, ומובחן מירוק/אדום כדי שכפתורים לא ייקראו כ-Buy/Sell
+linkColor                = "#58A6FF"
+borderColor              = "#2A313C"
+
+# תואם ל-badge-up / badge-down ב-app.py
+greenColor = "#16A34A"
+redColor   = "#DC2626"
+
+dataframeHeaderBackgroundColor = "#161B22"
+dataframeBorderColor           = "#2A313C"
+
+font         = "sans-serif"
+baseRadius   = "10px"
+buttonRadius = "12px"   # תואם ל-border-radius של הכפתורים ב-CSS של האפליקציה
+showWidgetBorder = true
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false
