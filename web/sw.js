@@ -1,13 +1,16 @@
-// מעטפת האפליקציה נשמרת במטמון כדי שתיפתח מיד, גם בלי רשת.
-// קריאות ל-API אף פעם לא נשמרות — נתוני מסחר חייבים להיות טריים.
-const CACHE = "options-research-v1";
+// גרסה זו נדרשת כדי לפנות מטמונים ישנים. יש להעלות אותה כשמשתנה מעטפת האפליקציה.
+const VERSION = "v2";
+const CACHE = `optiradar-${VERSION}`;
+
 const SHELL = [
   "./", "./index.html", "./styles.css", "./app.js", "./manifest.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (e) => {
@@ -20,17 +23,39 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== "GET" || url.pathname.includes("/api/")) return;
 
-  e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit || fetch(e.request).then((res) => {
-        if (res.ok && url.origin === location.origin) {
+  // נתוני מסחר חייבים להיות טריים — לעולם לא מהמטמון
+  if (e.request.method !== "GET" || url.pathname.includes("/api/")) return;
+  if (url.origin !== location.origin) return;
+
+  // ניווט: רשת קודם. כך פריסה חדשה נתפסת בטעינה הראשונה ולא נתקעת
+  // על גרסה ישנה, וגם במצב לא-מקוון עדיין נפתחת המעטפת השמורה.
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-        }
-        return res;
-      }).catch(() => caches.match("./index.html"))
-    )
+          caches.open(CACHE).then((c) => c.put("./index.html", copy));
+          return res;
+        })
+        .catch(() => caches.match("./index.html").then((hit) => hit || caches.match("./")))
+    );
+    return;
+  }
+
+  // נכסים: מגישים מהמטמון לתגובה מיידית, ומרעננים ברקע לפעם הבאה
+  e.respondWith(
+    caches.match(e.request).then((hit) => {
+      const network = fetch(e.request)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, copy));
+          }
+          return res;
+        })
+        .catch(() => hit);
+      return hit || network;
+    })
   );
 });
