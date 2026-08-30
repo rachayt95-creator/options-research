@@ -25,12 +25,16 @@ app.py               גרסת Streamlit (עוטפת את research.py)
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-export GEMINI_API_KEY="..."        # מפתח חינמי: https://aistudio.google.com/apikey
+# מפתח חינמי: https://aistudio.google.com/apikey
+echo 'GEMINI_API_KEY="AIza-המפתח-שלך"' > .env
 
 .venv/bin/uvicorn api.main:app --reload --port 8000
 ```
 
 פתח http://localhost:8000 — זו האפליקציה.
+
+`.env` מוחרג ב-`.gitignore`. משתנה סביבה אמיתי גובר עליו, כך שבפריסה
+מספיק להגדיר `GEMINI_API_KEY` בהגדרות השירות.
 לגרסת Streamlit: `.venv/bin/streamlit run app.py`.
 
 ### התקנה כאפליקציה באייפון

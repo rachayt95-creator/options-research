@@ -246,6 +246,29 @@ class LLMError(Exception):
     """שגיאה בתקשורת מול Gemini."""
 
 
+def _load_dotenv(path: str = ".env") -> None:
+    """
+    טוען .env אם קיים, בלי תלות חיצונית. משתני סביבה אמיתיים גוברים,
+    כדי שהגדרות הפריסה (Render) תמיד ינצחו קובץ מקומי.
+    """
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except OSError:
+        pass  # אין קובץ .env — זה המצב הרגיל בפריסה
+
+
+_load_dotenv()
+
+
 def get_api_key() -> str | None:
     """מפתח Gemini ממשתנה הסביבה. שכבת הסודות של Streamlit נוספת מעל, ב-app.py."""
     return (os.environ.get("GEMINI_API_KEY") or "").strip() or None
