@@ -111,13 +111,22 @@ button.primary:disabled { opacity:.55; }
 .seg.on { background:var(--surface); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.35); }
 
 /* ---------- טבלה ---------- */
-.scroll-x { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+/* מיכל גלילה תחום: הכותרת נדבקת בתוכו במקום לראש המסך, שם היא
+   התנגשה בסרגל העליון. גם מונע עמוד באורך 79 שורות בנייד. */
+.scroll-x {
+  overflow:auto; -webkit-overflow-scrolling:touch;
+  max-height:58vh; overscroll-behavior:contain;
+  border:1px solid var(--border); border-radius:10px;
+}
 table { width:100%; border-collapse:collapse; direction:ltr; font-size:.86rem; }
 th, td {
   padding:.5rem .55rem; text-align:right; white-space:nowrap;
   font-variant-numeric:tabular-nums; border-bottom:1px solid var(--border);
 }
-th { color:var(--muted); font-weight:600; font-size:.78rem; position:sticky; top:0; background:var(--surface); }
+th {
+  color:var(--muted); font-weight:600; font-size:.78rem;
+  position:sticky; top:0; z-index:1; background:var(--surface-2);
+}
 tbody tr.atm { background:rgba(240,180,41,.09); }
 tbody tr.atm td:first-child { color:var(--amber); font-weight:700; }
 
