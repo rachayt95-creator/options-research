@@ -238,7 +238,13 @@ function renderSymbols(filter = "") {
     : `<p class="picker-empty">אין התאמה ברשימה — אפשר להקליד כל סימבול</p>`;
 }
 
-const showSymbols = () => { renderSymbols(el.symbol.value); el.symPanel.hidden = false; };
+const showSymbols = () => {
+  renderSymbols(el.symbol.value);
+  el.symPanel.hidden = false;
+  // האיפוס חייב לבוא אחרי הסרת hidden — על אלמנט מוסתר הערך לא נתפס.
+  // בלעדיו הרשימה נפתחת במקום שבו הופסקה הגלילה הקודמת.
+  el.symList.scrollTop = 0;
+};
 const hideSymbols = () => { el.symPanel.hidden = true; };
 
 el.symbol.addEventListener("focus", showSymbols);
