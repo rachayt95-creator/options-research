@@ -370,5 +370,14 @@ addEventListener("offline", netState);
 netState();
 
 if ("serviceWorker" in navigator) {
+  // כשגרסה חדשה של ה-worker משתלטת, הדף שרץ עדיין מחזיק את הקוד הישן
+  // בזיכרון. רענון אוטומטי חוסך מהמשתמש לגלות זאת בעצמו.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloading) return;   // התקנה ראשונה — אין מה לרענן
+    reloading = true;
+    location.reload();
+  });
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }
