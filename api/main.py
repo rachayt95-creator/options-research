@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 import research
 
-app = FastAPI(title="מערכת מחקר אופציות", docs_url="/api/docs")
+app = FastAPI(title="OptiRadar", docs_url="/api/docs")
 
 WEB_DIR = "web"
 DATA_TTL = 300      # 5 דקות — נתוני מסחר

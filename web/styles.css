@@ -29,7 +29,7 @@ body {
   -webkit-backdrop-filter:saturate(180%) blur(14px);
   border-bottom:1px solid var(--border);
 }
-.brand { display:flex; align-items:center; gap:.55rem; font-weight:700; }
+.brand { display:flex; align-items:center; gap:.55rem; font-weight:700; letter-spacing:.02em; }
 .brand img { border-radius:6px; }
 .netdot { width:9px; height:9px; border-radius:50%; background:var(--green); }
 .netdot.off { background:var(--red); }

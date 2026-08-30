@@ -1,5 +1,5 @@
 """
-מערכת מחקר אופציות — שלב 1: שליפת נתוני בסיס מ-yfinance.
+OptiRadar — מערכת מחקר אופציות.
 
 הרצה:  streamlit run app.py
 """
@@ -24,15 +24,15 @@ _sentiment_badge = research._sentiment_badge
 # ---------------------------------------------------------------- הגדרות עמוד
 
 st.set_page_config(
-    page_title="מערכת מחקר אופציות",
-    page_icon="📈",
+    page_title="OptiRadar",
+    page_icon="📡",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
 
 # ------------------------------------------------------------------ PWA
 
-APP_NAME = "מחקר אופציות"
+APP_NAME = "OptiRadar"
 
 # מוזרק אל <head> של עמוד האב. ה-iframe של components רץ עם allow-same-origin,
 # ולכן window.parent.document נגיש — בלי זה המטה-תגיות היו נוחתות בתוך ה-iframe
@@ -206,7 +206,7 @@ def analyze_with_llm(data: dict[str, Any], target_date: dt.date) -> str:
 
 # ------------------------------------------------------------------- ממשק
 
-st.title("📈 מערכת מחקר אופציות")
+st.title("📡 OptiRadar")
 st.caption("שלב 1 — שליפת נתוני בסיס, חדשות ושרשרת אופציות")
 
 symbol_input = st.text_input(
