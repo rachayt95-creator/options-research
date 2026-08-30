@@ -209,7 +209,7 @@ def _clean_chain(df: pd.DataFrame) -> pd.DataFrame:
 
 # ------------------------------------------------------------ ניתוח Gemini
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.6-flash"
 
 SYSTEM_PROMPT = """אתה אנליסט מחקר מוביל (Lead Research Analyst) המתמחה בשוק האופציות האמריקאי, \
 וכותב עבור סוחרי אופציות מקצועיים.
@@ -350,12 +350,22 @@ def _generate_report(prompt: str, api_key: str) -> str:
         config=types.GenerateContentConfig(
             system_instruction=SYSTEM_PROMPT,
             temperature=0.4,
-            max_output_tokens=2048,
+            # מודל חשיבה: ה-thinking נגרע מתקציב הפלט. עם תקציב צר מדי
+            # הדוח נחתך באמצע משפט, ולכן חלון רחב וגג מפורש לחשיבה.
+            max_output_tokens=8192,
+            thinking_config=types.ThinkingConfig(thinking_budget=2048),
         ),
     )
+
     text = (response.text or "").strip()
     if not text:
         raise LLMError("Gemini החזיר תשובה ריקה. נסה שוב בעוד רגע.")
+
+    # דוח קטוע גרוע מדוח חסר — עדיף להיכשל בקול
+    candidates = response.candidates or []
+    if candidates and str(getattr(candidates[0], "finish_reason", "")).endswith("MAX_TOKENS"):
+        raise LLMError("הדוח נקטע באמצע. נסה שוב, או הקטן את היקף הנתונים.")
+
     return text
 
 
