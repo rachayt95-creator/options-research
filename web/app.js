@@ -230,10 +230,15 @@ function renderChart(symbol, exchange) {
     return;
   }
 
+  // המיכל של TradingView נבנה בפנים, כדי שהמחלקות שלה לא ידרסו
+  // את הגובה שאנחנו קובעים על .tv-wrap
+  const container = document.createElement("div");
+  container.className = "tradingview-widget-container";
+
   const inner = document.createElement("div");
   inner.className = "tradingview-widget-container__widget";
-  inner.style.height = "100%";
-  el.tv.appendChild(inner);
+  container.appendChild(inner);
+  el.tv.appendChild(container);
 
   const script = document.createElement("script");
   script.type = "text/javascript";
@@ -253,6 +258,11 @@ function renderChart(symbol, exchange) {
     withdateranges: true,
     hide_top_toolbar: false,
     hide_legend: false,
+    // סרגל הכלים הצדדי גוזל רוחב יקר במסך צר
+    hide_side_toolbar: window.innerWidth < 820,
+    details: false,
+    hotlist: false,
+    calendar: false,
     allow_symbol_change: false,
     save_image: false,
     support_host: "https://www.tradingview.com",
@@ -260,7 +270,7 @@ function renderChart(symbol, exchange) {
   script.onerror = () => {
     el.tv.innerHTML = `<p class="tv-fallback">לא ניתן לטעון את הגרף כרגע.</p>`;
   };
-  el.tv.appendChild(script);
+  container.appendChild(script);
 }
 
 // ------------------------------------------------------------------ זרימה

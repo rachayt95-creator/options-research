@@ -256,10 +256,16 @@ tbody tr.atm td:first-child { color:var(--amber); font-weight:700; }
 .hist-chip:active { background:rgba(240,180,41,.16); }
 
 /* ---------- גרף TradingView ---------- */
+/* !important כי TradingView מזריקה CSS משלה למיכל הווידג'ט.
+   בלעדיו היא דרסה את הגובה והגרף הצטמק לגובה בלתי קריא. */
 .tv-wrap {
-  height:clamp(320px, 52vh, 520px);
+  height:clamp(440px, 70vh, 720px) !important;
   margin-top:.6rem; border-radius:10px; overflow:hidden;
   border:1px solid var(--border); background:var(--surface-2);
+}
+.tv-wrap .tradingview-widget-container,
+.tv-wrap .tradingview-widget-container__widget {
+  height:100% !important; width:100% !important;
 }
 .tv-wrap iframe { display:block; width:100% !important; height:100% !important; border:0; }
 .tv-fallback { padding:1.2rem; text-align:center; color:var(--muted); font-size:.88rem; }
