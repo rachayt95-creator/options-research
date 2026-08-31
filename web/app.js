@@ -140,16 +140,34 @@ function renderChain(side) {
 // --------------------------------------------------- אזהרת דוח כספי
 
 function renderEarnings(snap, expiry) {
-  if (!snap.has_earnings_before_exp || !snap.earnings_date) {
-    el.earnAlert.hidden = true;
+  const title = el.earnAlert.querySelector("strong");
+
+  if (snap.has_earnings_before_exp && snap.earnings_date) {
+    const days = snap.days_to_earnings;
+    el.earnAlert.className = "earn-alert";
+    el.earnAlert.querySelector(".earn-icon").textContent = "⚠️";
+    title.textContent = "דוח כספי לפני הפקיעה";
+    el.earnText.textContent =
+      `הדוח צפוי ב-${snap.earnings_date}${days != null ? ` (בעוד ${days} ימים)` : ""}, ` +
+      `כלומר לפני הפקיעה ב-${expiry}. ה-IV נוטה להתנפח לקראת הדוח ולקרוס מיד לאחריו — ` +
+      `IV Crush שעלול למחוק את ערך האופציה גם כאשר כיוון המחיר צדק.`;
+    el.earnAlert.hidden = false;
     return;
   }
-  const days = snap.days_to_earnings;
-  el.earnText.textContent =
-    `הדוח צפוי ב-${snap.earnings_date}${days != null ? ` (בעוד ${days} ימים)` : ""}, ` +
-    `כלומר לפני הפקיעה ב-${expiry}. ה-IV נוטה להתנפח לקראת הדוח ולקרוס מיד לאחריו — ` +
-    `IV Crush שעלול למחוק את ערך האופציה גם כאשר כיוון המחיר צדק.`;
-  el.earnAlert.hidden = false;
+
+  // "לא ידוע" אינו "אין דוח". שתיקה כאן הייתה נקראת כאישור שאין סיכון.
+  if (!snap.earnings_known) {
+    el.earnAlert.className = "earn-alert unknown";
+    el.earnAlert.querySelector(".earn-icon").textContent = "❔";
+    title.textContent = "תאריך הדוח הכספי אינו זמין";
+    el.earnText.textContent =
+      "ספק הנתונים לא החזיר את מועד הדוח, ולכן לא ניתן לשלול דוח לפני הפקיעה " +
+      "ואת סיכון ה-IV Crush הנלווה. כדאי לאמת ידנית לפני פתיחת פוזיציה.";
+    el.earnAlert.hidden = false;
+    return;
+  }
+
+  el.earnAlert.hidden = true;
 }
 
 // ------------------------------------------------ היסטוריית חיפושים

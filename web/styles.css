@@ -236,6 +236,13 @@ tbody tr.atm td:first-child { color:var(--amber); font-weight:700; }
 .earn-body strong { display:block; color:#F87171; font-size:1rem; margin-bottom:.15rem; }
 .earn-body p { margin:0; font-size:.88rem; line-height:1.6; color:var(--text); }
 
+/* מצב "לא ידוע": מיידע בלי להיראות כמו התרעת סיכון ודאית */
+.earn-alert.unknown {
+  background:rgba(139,152,169,.08);
+  border-color:rgba(139,152,169,.35);
+}
+.earn-alert.unknown .earn-body strong { color:var(--muted); }
+
 /* ---------- תגיות חיפושים אחרונים ---------- */
 .history { margin:-.3rem 0 .9rem; }
 .history-label { display:block; font-size:.78rem; color:var(--muted); margin-bottom:.4rem; }

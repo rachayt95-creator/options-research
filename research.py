@@ -81,26 +81,40 @@ def _normalize_news(raw_news: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["כותרת", "מקור", "פורסם", "קישור"])
 
 
-def _next_earnings(ticker: yf.Ticker) -> dt.date | None:
-    """תאריך הדוח הכספי הקרוב, או None אם אינו זמין."""
+def _next_earnings(ticker: yf.Ticker, info: dict[str, Any] | None = None) -> dt.date | None:
+    """
+    תאריך הדוח הכספי הקרוב, או None אם אינו זמין.
+
+    שני מקורות, שניהם מבית quoteSummary של Yahoo: calendar ואחריו info.
+    Yahoo מגביל את נקודת הקצה הזו מכתובות IP של ספקי ענן, ולכן שם היא
+    עשויה להיכשל בעוד שאר הנתונים נשלפים כרגיל. None כאן פירושו
+    "לא ידוע" ולא "אין דוח" — ההבחנה נשמרת ב-earnings_known.
+    """
+    today = dt.date.today()
+    candidates: list[dt.date] = []
+
     try:
         cal = ticker.calendar or {}
+        raw = cal.get("Earnings Date") if isinstance(cal, dict) else None
+        if raw is not None:
+            for item in (raw if isinstance(raw, (list, tuple)) else [raw]):
+                if isinstance(item, dt.datetime):
+                    item = item.date()
+                if isinstance(item, dt.date):
+                    candidates.append(item)
     except Exception:
-        return None
+        pass
 
-    raw = cal.get("Earnings Date") if isinstance(cal, dict) else None
-    if raw is None:
-        return None
-    if not isinstance(raw, (list, tuple)):
-        raw = [raw]
+    if not candidates and info:
+        for key in ("earningsTimestampStart", "earningsTimestampEnd", "earningsTimestamp"):
+            ts = info.get(key)
+            if isinstance(ts, (int, float)) and ts > 0:
+                try:
+                    candidates.append(dt.datetime.fromtimestamp(ts).date())
+                except (OverflowError, OSError, ValueError):
+                    pass
 
-    today = dt.date.today()
-    upcoming = []
-    for item in raw:
-        if isinstance(item, dt.datetime):
-            item = item.date()
-        if isinstance(item, dt.date) and item >= today:
-            upcoming.append(item)
+    upcoming = [d for d in candidates if d >= today]
     return min(upcoming) if upcoming else None
 
 
@@ -200,7 +214,7 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
 
     # דוח כספי בין היום לפקיעה הוא הגורם הדומיננטי לסיכון IV Crush.
     # ההשוואה מול הפקיעה הסחירה שנבחרה, ולא מול התאריך המבוקש.
-    earnings = _next_earnings(ticker)
+    earnings = _next_earnings(ticker, info)
     horizon = target_date
     if selected_expiry:
         try:
@@ -208,6 +222,8 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
         except ValueError:
             pass
 
+    # "לא ידוע" חייב להיות נבדל מ"אין דוח": אחרת התרעת סיכון נכשלת בשקט
+    snapshot["earnings_known"] = earnings is not None
     snapshot["earnings_date"] = earnings.isoformat() if earnings else None
     snapshot["has_earnings_before_exp"] = bool(
         earnings and dt.date.today() <= earnings <= horizon
@@ -381,7 +397,10 @@ def build_llm_context(data: dict[str, Any], target_date: dt.date) -> str:
                 "אין חשיפה לסיכון דוח בחלון הזה."
             )
     else:
-        parts.append("תאריך הדוח הכספי אינו זמין בנתונים שסופקו.")
+        parts.append(
+            "תאריך הדוח הכספי אינו זמין. אל תסיק מכך שאין דוח לפני הפקיעה — "
+            "ציין במפורש שלא ניתן לשלול סיכון IV Crush מדוח."
+        )
 
     parts.append(_chain_stats(data))
 
