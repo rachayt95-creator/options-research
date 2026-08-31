@@ -7,7 +7,9 @@ const el = { form:$("form"), symbol:$("symbol"), target:$("target"), go:$("go"),
              aiBody:$("ai-body"), netdot:$("netdot"),
              symPanel:$("symbol-panel"), symList:$("symbol-list"),
              dateBtn:$("date-btn"), dateText:$("date-text"), dateDte:$("date-dte"),
-             cal:$("cal"), calTitle:$("cal-title"), calGrid:$("cal-grid") };
+             cal:$("cal"), calTitle:$("cal-title"), calGrid:$("cal-grid"),
+             earnAlert:$("earnings-alert"), earnText:$("earnings-text"),
+             history:$("history"), histChips:$("history-chips"), tv:$("tv-chart") };
 
 let chainData = { calls: [], puts: [] };
 let spot = null;
@@ -135,6 +137,100 @@ function renderChain(side) {
       cols.map((c) => `<td>${r[c] === null ? "—" : esc(r[c])}</td>`).join("")}</tr>`).join("");
 }
 
+// --------------------------------------------------- אזהרת דוח כספי
+
+function renderEarnings(snap, expiry) {
+  if (!snap.has_earnings_before_exp || !snap.earnings_date) {
+    el.earnAlert.hidden = true;
+    return;
+  }
+  const days = snap.days_to_earnings;
+  el.earnText.textContent =
+    `הדוח צפוי ב-${snap.earnings_date}${days != null ? ` (בעוד ${days} ימים)` : ""}, ` +
+    `כלומר לפני הפקיעה ב-${expiry}. ה-IV נוטה להתנפח לקראת הדוח ולקרוס מיד לאחריו — ` +
+    `IV Crush שעלול למחוק את ערך האופציה גם כאשר כיוון המחיר צדק.`;
+  el.earnAlert.hidden = false;
+}
+
+// ------------------------------------------------ היסטוריית חיפושים
+
+const HIST_KEY = "optiradar.history";
+const HIST_MAX = 5;
+
+// כל גישה ל-localStorage עטופה: בגלישה פרטית היא זורקת חריגה
+function loadHistory() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HIST_KEY));
+    return Array.isArray(raw) ? raw.filter((s) => typeof s === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderHistory() {
+  const list = loadHistory();
+  if (!list.length) { el.history.hidden = true; return; }
+  el.histChips.innerHTML = list
+    .map((s) => `<button type="button" class="hist-chip" data-sym="${esc(s)}">${esc(s)}</button>`)
+    .join("");
+  el.history.hidden = false;
+}
+
+function saveHistory(symbol) {
+  const list = [symbol, ...loadHistory().filter((s) => s !== symbol)].slice(0, HIST_MAX);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(list)); } catch { /* אחסון חסום */ }
+  renderHistory();
+}
+
+el.histChips.addEventListener("click", (ev) => {
+  const chip = ev.target.closest(".hist-chip");
+  if (!chip) return;
+  el.symbol.value = chip.dataset.sym;
+  hideSymbols();
+});
+
+// -------------------------------------------------- גרף TradingView
+
+function renderChart(symbol) {
+  el.tv.innerHTML = "";
+  if (!navigator.onLine) {
+    el.tv.innerHTML = `<p class="tv-fallback">הגרף דורש חיבור לרשת.</p>`;
+    return;
+  }
+
+  const inner = document.createElement("div");
+  inner.className = "tradingview-widget-container__widget";
+  inner.style.height = "100%";
+  el.tv.appendChild(inner);
+
+  const script = document.createElement("script");
+  script.type = "text/javascript";
+  script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+  script.async = true;
+  // הווידג'ט קורא את הגדרותיו מגוף התגית, לא מ-attribute
+  script.textContent = JSON.stringify({
+    autosize: true,
+    symbol,
+    interval: "D",
+    timezone: "Asia/Jerusalem",
+    theme: "dark",
+    style: "1",                       // נרות יפניים
+    locale: "he_IL",
+    backgroundColor: "#0B0E14",
+    gridColor: "rgba(42, 49, 60, 0.5)",
+    withdateranges: true,
+    hide_top_toolbar: false,
+    hide_legend: false,
+    allow_symbol_change: false,
+    save_image: false,
+    support_host: "https://www.tradingview.com",
+  });
+  script.onerror = () => {
+    el.tv.innerHTML = `<p class="tv-fallback">לא ניתן לטעון את הגרף כרגע.</p>`;
+  };
+  el.tv.appendChild(script);
+}
+
 // ------------------------------------------------------------------ זרימה
 
 async function loadReport(symbol, date) {
@@ -179,8 +275,11 @@ async function analyze(ev) {
     if (!res.ok) throw new Error(data.detail || "שגיאה בשליפת הנתונים.");
 
     renderHero(data.snapshot);
+    renderEarnings(data.snapshot, data.expiry || data.requestedDate);
     renderLevels(data.levels);
     renderNews(data.news);
+    renderChart(symbol);
+    saveHistory(symbol);
 
     chainData = { calls:data.calls, puts:data.puts };
     el.chainMeta.textContent = data.optionsError
@@ -363,6 +462,7 @@ document.addEventListener("pointerdown", (ev) => {
 });
 
 syncDate();
+renderHistory();
 
 const netState = () => el.netdot.classList.toggle("off", !navigator.onLine);
 addEventListener("online", netState);

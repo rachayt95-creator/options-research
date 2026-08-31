@@ -68,9 +68,22 @@
     <button id="go" type="submit" class="primary">בצע ניתוח</button>
   </form>
 
+  <div id="history" class="history" hidden>
+    <span class="history-label">חיפושים אחרונים</span>
+    <div id="history-chips" class="chips"></div>
+  </div>
+
   <p id="error" class="alert" hidden></p>
 
   <section id="results" hidden>
+
+    <div id="earnings-alert" class="earn-alert" hidden>
+      <span class="earn-icon" aria-hidden="true">⚠️</span>
+      <div class="earn-body">
+        <strong>דוח כספי לפני הפקיעה</strong>
+        <p id="earnings-text"></p>
+      </div>
+    </div>
 
     <section class="card hero">
       <div class="hero-head">
@@ -92,6 +105,12 @@
     <section class="card" id="ai-card">
       <h2>דוח אנליסט</h2>
       <div id="ai-body"></div>
+    </section>
+
+    <section class="card">
+      <h2>גרף מחיר</h2>
+      <p class="muted tiny">נרות יומיים — להצלבה מול רמות התמיכה וההתנגדות למעלה</p>
+      <div id="tv-chart" class="tv-wrap tradingview-widget-container"></div>
     </section>
 
     <section class="card">

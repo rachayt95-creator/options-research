@@ -225,6 +225,38 @@ tbody tr.atm td:first-child { color:var(--amber); font-weight:700; }
 .news .t { font-size:.94rem; line-height:1.5; }
 .news .m { margin-top:.3rem; font-size:.78rem; color:var(--muted); }
 
+/* ---------- באנר אזהרת דוח כספי ---------- */
+.earn-alert {
+  display:flex; align-items:flex-start; gap:.7rem;
+  padding:.85rem 1rem; margin-bottom:.9rem; border-radius:var(--radius);
+  background:linear-gradient(180deg, rgba(220,38,38,.16), rgba(240,180,41,.10));
+  border:1px solid rgba(220,38,38,.45);
+}
+.earn-icon { font-size:1.4rem; line-height:1.2; }
+.earn-body strong { display:block; color:#F87171; font-size:1rem; margin-bottom:.15rem; }
+.earn-body p { margin:0; font-size:.88rem; line-height:1.6; color:var(--text); }
+
+/* ---------- תגיות חיפושים אחרונים ---------- */
+.history { margin:-.3rem 0 .9rem; }
+.history-label { display:block; font-size:.78rem; color:var(--muted); margin-bottom:.4rem; }
+.chips { display:flex; flex-wrap:wrap; gap:.4rem; }
+.hist-chip {
+  min-height:36px; padding:.3rem .85rem; border-radius:999px;
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--amber); font-family:inherit; font-size:.88rem; font-weight:700;
+  direction:ltr; letter-spacing:.04em; touch-action:manipulation;
+}
+.hist-chip:active { background:rgba(240,180,41,.16); }
+
+/* ---------- גרף TradingView ---------- */
+.tv-wrap {
+  height:clamp(320px, 52vh, 520px);
+  margin-top:.6rem; border-radius:10px; overflow:hidden;
+  border:1px solid var(--border); background:var(--surface-2);
+}
+.tv-wrap iframe { display:block; width:100% !important; height:100% !important; border:0; }
+.tv-fallback { padding:1.2rem; text-align:center; color:var(--muted); font-size:.88rem; }
+
 /* ---------- דוח AI ---------- */
 .badge {
   display:inline-block; padding:.35rem 1rem; border-radius:999px;

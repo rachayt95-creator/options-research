@@ -81,6 +81,29 @@ def _normalize_news(raw_news: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["כותרת", "מקור", "פורסם", "קישור"])
 
 
+def _next_earnings(ticker: yf.Ticker) -> dt.date | None:
+    """תאריך הדוח הכספי הקרוב, או None אם אינו זמין."""
+    try:
+        cal = ticker.calendar or {}
+    except Exception:
+        return None
+
+    raw = cal.get("Earnings Date") if isinstance(cal, dict) else None
+    if raw is None:
+        return None
+    if not isinstance(raw, (list, tuple)):
+        raw = [raw]
+
+    today = dt.date.today()
+    upcoming = []
+    for item in raw:
+        if isinstance(item, dt.datetime):
+            item = item.date()
+        if isinstance(item, dt.date) and item >= today:
+            upcoming.append(item)
+    return min(upcoming) if upcoming else None
+
+
 def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
     """
     שולף מ-yfinance עבור סימבול ותאריך יעד:
@@ -175,6 +198,22 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
     except Exception as exc:
         options_error = f"שגיאה בשליפת שרשרת האופציות: {exc}"
 
+    # דוח כספי בין היום לפקיעה הוא הגורם הדומיננטי לסיכון IV Crush.
+    # ההשוואה מול הפקיעה הסחירה שנבחרה, ולא מול התאריך המבוקש.
+    earnings = _next_earnings(ticker)
+    horizon = target_date
+    if selected_expiry:
+        try:
+            horizon = dt.datetime.strptime(selected_expiry, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    snapshot["earnings_date"] = earnings.isoformat() if earnings else None
+    snapshot["has_earnings_before_exp"] = bool(
+        earnings and dt.date.today() <= earnings <= horizon
+    )
+    snapshot["days_to_earnings"] = (earnings - dt.date.today()).days if earnings else None
+
     return {
         "snapshot": snapshot,
         "levels": levels,
@@ -223,6 +262,11 @@ SYSTEM_PROMPT = """אתה אנליסט מחקר מוביל (Lead Research Analys
    דוגמה לניסוח נכון: "רמת ה-IV הגבוהה מעדיפה Credit Spread מבוסס Put מתחת לתמיכה".
 3. אל תמציא נתונים. אם נתון חסר או לא סופק לך — ציין זאת במפורש במקום לנחש.
 4. זהו מחקר בלבד ולא ייעוץ השקעות. אל תיתן הוראת קנייה או מכירה מחייבת.
+5. אם נמסר לך שצפוי דוח כספי לפני הפקיעה — התייחס לכך בכובד ראש ותן לכך
+   משקל מרכזי בניתוח. הסבר כיצד הדוח מנפח את ה-IV לקראתו, והזהר במפורש
+   מפני IV Crush: קריסת התנודתיות המשתמעת מיד לאחר הפרסום, שעלולה למחוק
+   את ערך האופציה גם כאשר כיוון המחיר צדק. ציין זאת גם בשורת הסנטימנט
+   וגם בנקודות המפתח, לא רק בדגשים.
 
 מבנה הדוח — השתמש בכותרות Markdown בדיוק בסדר ובניסוח הבא:
 
@@ -325,6 +369,20 @@ def build_llm_context(data: dict[str, Any], target_date: dt.date) -> str:
             else "לא נמצא תאריך פקיעה סחיר."
         )
     )
+    if snap.get("earnings_date"):
+        if snap.get("has_earnings_before_exp"):
+            parts.append(
+                f"⚠️ דוח כספי צפוי ב-{snap['earnings_date']} — כלומר **לפני הפקיעה**, "
+                f"בעוד {snap.get('days_to_earnings')} ימים. זהו גורם סיכון מרכזי."
+            )
+        else:
+            parts.append(
+                f"דוח כספי צפוי ב-{snap['earnings_date']}, כלומר אחרי הפקיעה. "
+                "אין חשיפה לסיכון דוח בחלון הזה."
+            )
+    else:
+        parts.append("תאריך הדוח הכספי אינו זמין בנתונים שסופקו.")
+
     parts.append(_chain_stats(data))
 
     news = data.get("news")
