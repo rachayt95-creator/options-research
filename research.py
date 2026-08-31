@@ -509,7 +509,39 @@ def build_llm_context(data: dict[str, Any], target_date: dt.date) -> str:
 def _generate_report(prompt: str, api_key: str) -> str:
     """קריאה בפועל ל-Gemini. ממוטמנת כדי לא לבזבז קריאות על אותו קלט."""
     client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
+
+    # 503 UNAVAILABLE מ-Gemini הוא עומס רגעי ולא תקלה. שני ניסיונות
+    # חוזרים חוסכים מהמשתמש כישלון שנפתר מעצמו תוך שניות.
+    response = None
+    last_error: Exception | None = None
+    for attempt in range(3):
+        try:
+            response = _call_gemini(client, prompt)
+            break
+        except Exception as exc:
+            last_error = exc
+            if "503" not in str(exc) and "UNAVAILABLE" not in str(exc):
+                raise
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1))
+    if response is None:
+        raise LLMError(
+            "Gemini עמוס כרגע ולא הגיב אחרי שלושה ניסיונות. נסה שוב בעוד רגע."
+        ) from last_error
+
+    text = (response.text or "").strip()
+    if not text:
+        raise LLMError("Gemini החזיר תשובה ריקה. נסה שוב בעוד רגע.")
+
+    candidates = response.candidates or []
+    if candidates and str(getattr(candidates[0], "finish_reason", "")).endswith("MAX_TOKENS"):
+        raise LLMError("הדוח נקטע באמצע. נסה שוב, או הקטן את היקף הנתונים.")
+
+    return text
+
+
+def _call_gemini(client: genai.Client, prompt: str):
+    return client.models.generate_content(
         model=GEMINI_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(
@@ -521,17 +553,6 @@ def _generate_report(prompt: str, api_key: str) -> str:
             thinking_config=types.ThinkingConfig(thinking_budget=2048),
         ),
     )
-
-    text = (response.text or "").strip()
-    if not text:
-        raise LLMError("Gemini החזיר תשובה ריקה. נסה שוב בעוד רגע.")
-
-    # דוח קטוע גרוע מדוח חסר — עדיף להיכשל בקול
-    candidates = response.candidates or []
-    if candidates and str(getattr(candidates[0], "finish_reason", "")).endswith("MAX_TOKENS"):
-        raise LLMError("הדוח נקטע באמצע. נסה שוב, או הקטן את היקף הנתונים.")
-
-    return text
 
 
 def analyze_with_llm(data: dict[str, Any], target_date: dt.date) -> str:

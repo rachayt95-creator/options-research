@@ -232,11 +232,18 @@ function renderChart(symbol, exchange) {
 
   // המיכל של TradingView נבנה בפנים, כדי שהמחלקות שלה לא ידרסו
   // את הגובה שאנחנו קובעים על .tv-wrap
+  // הגובה נקבע במפורש ולא דרך CSS: TradingView מזריקה גיליון משלה
+  // שדרס את מה שהגדרנו, והגרף יצא בגובה בלתי קריא.
+  const height = Math.round(Math.min(720, Math.max(440, window.innerHeight * 0.7)));
+  el.tv.style.height = `${height}px`;
+
   const container = document.createElement("div");
   container.className = "tradingview-widget-container";
+  container.style.height = `${height}px`;
 
   const inner = document.createElement("div");
   inner.className = "tradingview-widget-container__widget";
+  inner.style.height = `${height}px`;
   container.appendChild(inner);
   el.tv.appendChild(container);
 
@@ -246,7 +253,8 @@ function renderChart(symbol, exchange) {
   script.async = true;
   // הווידג'ט קורא את הגדרותיו מגוף התגית, לא מ-attribute
   script.textContent = JSON.stringify({
-    autosize: true,
+    width: "100%",
+    height,                            // פיקסלים מפורשים — גובר על autosize
     symbol: tvSymbol(symbol, exchange),
     interval: "D",
     timezone: "Asia/Jerusalem",
