@@ -13,6 +13,7 @@ import os
 from typing import Any
 
 import pandas as pd
+import requests
 import yfinance as yf
 from google import genai
 from google.genai import types
@@ -79,6 +80,57 @@ def _normalize_news(raw_news: list[dict]) -> pd.DataFrame:
         )
 
     return pd.DataFrame(rows, columns=["כותרת", "מקור", "פורסם", "קישור"])
+
+
+FINNHUB_URL = "https://finnhub.io/api/v1/calendar/earnings"
+
+
+def _finnhub_earnings(symbol: str) -> dict[str, Any] | None:
+    """
+    תאריך הדוח מ-Finnhub. זהו המקור המועדף: הוא עובד גם מכתובות IP של
+    ספקי ענן, בניגוד ל-quoteSummary של Yahoo, ומוסיף את שעת הפרסום
+    ואת תחזית ה-EPS.
+    """
+    key = (os.environ.get("FINNHUB_API_KEY") or "").strip()
+    if not key:
+        return None
+
+    today = dt.date.today()
+    try:
+        res = requests.get(
+            FINNHUB_URL,
+            params={
+                "symbol": symbol,
+                "from": today.isoformat(),
+                "to": (today + dt.timedelta(days=400)).isoformat(),
+                "token": key,
+            },
+            timeout=8,
+        )
+        res.raise_for_status()
+        rows = (res.json() or {}).get("earningsCalendar") or []
+    except Exception:
+        return None
+
+    upcoming = []
+    for row in rows:
+        try:
+            when = dt.datetime.strptime(row["date"], "%Y-%m-%d").date()
+        except (KeyError, TypeError, ValueError):
+            continue
+        if when >= today:
+            upcoming.append((when, row))
+
+    if not upcoming:
+        return None
+
+    when, row = min(upcoming, key=lambda pair: pair[0])
+    return {
+        "date": when,
+        "hour": row.get("hour") or "",
+        "eps_estimate": row.get("epsEstimate"),
+        "source": "finnhub",
+    }
 
 
 def _next_earnings(ticker: yf.Ticker, info: dict[str, Any] | None = None) -> dt.date | None:
@@ -225,7 +277,9 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
 
     # דוח כספי בין היום לפקיעה הוא הגורם הדומיננטי לסיכון IV Crush.
     # ההשוואה מול הפקיעה הסחירה שנבחרה, ולא מול התאריך המבוקש.
-    earnings = _next_earnings(ticker, info)
+    # Finnhub קודם — הוא המקור שעובד מהענן. Yahoo כגיבוי.
+    fh = _finnhub_earnings(symbol)
+    earnings = fh["date"] if fh else _next_earnings(ticker, info)
     horizon = target_date
     if selected_expiry:
         try:
@@ -236,6 +290,8 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
     # "לא ידוע" חייב להיות נבדל מ"אין דוח": אחרת התרעת סיכון נכשלת בשקט
     snapshot["earnings_known"] = earnings is not None
     snapshot["earnings_date"] = earnings.isoformat() if earnings else None
+    snapshot["earnings_hour"] = (fh or {}).get("hour") or None
+    snapshot["earnings_eps_estimate"] = (fh or {}).get("eps_estimate")
     snapshot["has_earnings_before_exp"] = bool(
         earnings and dt.date.today() <= earnings <= horizon
     )
@@ -397,10 +453,16 @@ def build_llm_context(data: dict[str, Any], target_date: dt.date) -> str:
         )
     )
     if snap.get("earnings_date"):
+        timing = {"amc": " אחרי סגירת המסחר", "bmo": " לפני פתיחת המסחר"}.get(
+            (snap.get("earnings_hour") or "").lower(), ""
+        )
+        eps = snap.get("earnings_eps_estimate")
+        extra = f" תחזית EPS: {eps}." if eps is not None else ""
+
         if snap.get("has_earnings_before_exp"):
             parts.append(
-                f"⚠️ דוח כספי צפוי ב-{snap['earnings_date']} — כלומר **לפני הפקיעה**, "
-                f"בעוד {snap.get('days_to_earnings')} ימים. זהו גורם סיכון מרכזי."
+                f"⚠️ דוח כספי צפוי ב-{snap['earnings_date']}{timing} — כלומר **לפני הפקיעה**, "
+                f"בעוד {snap.get('days_to_earnings')} ימים. זהו גורם סיכון מרכזי.{extra}"
             )
         else:
             parts.append(

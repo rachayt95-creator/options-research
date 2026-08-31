@@ -144,13 +144,19 @@ function renderEarnings(snap, expiry) {
 
   if (snap.has_earnings_before_exp && snap.earnings_date) {
     const days = snap.days_to_earnings;
+    const timing = { amc: " אחרי סגירת המסחר", bmo: " לפני פתיחת המסחר" }[
+      (snap.earnings_hour || "").toLowerCase()] || "";
+    const eps = snap.earnings_eps_estimate != null
+      ? ` תחזית EPS: ${snap.earnings_eps_estimate}.` : "";
+
     el.earnAlert.className = "earn-alert";
     el.earnAlert.querySelector(".earn-icon").textContent = "⚠️";
     title.textContent = "דוח כספי לפני הפקיעה";
     el.earnText.textContent =
-      `הדוח צפוי ב-${snap.earnings_date}${days != null ? ` (בעוד ${days} ימים)` : ""}, ` +
-      `כלומר לפני הפקיעה ב-${expiry}. ה-IV נוטה להתנפח לקראת הדוח ולקרוס מיד לאחריו — ` +
-      `IV Crush שעלול למחוק את ערך האופציה גם כאשר כיוון המחיר צדק.`;
+      `הדוח צפוי ב-${snap.earnings_date}${timing}` +
+      `${days != null ? ` (בעוד ${days} ימים)` : ""}, כלומר לפני הפקיעה ב-${expiry}. ` +
+      `ה-IV נוטה להתנפח לקראת הדוח ולקרוס מיד לאחריו — IV Crush שעלול למחוק ` +
+      `את ערך האופציה גם כאשר כיוון המחיר צדק.${eps}`;
     el.earnAlert.hidden = false;
     return;
   }
