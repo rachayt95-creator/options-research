@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import math
 import os
+import time
 from typing import Any
 
 import pandas as pd
@@ -262,9 +263,23 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
     selected_expiry = None
     calls = puts = pd.DataFrame()
     try:
-        expirations = ticker.options
+        # Yahoo מגביל את נקודת הקצה הזו מכתובות IP של ספקי ענן, ולעיתים
+        # רק זמנית. שני ניסיונות חוזרים מכסים חנק קצר.
+        expirations = ()
+        for attempt in range(3):
+            expirations = ticker.options or ()
+            if expirations:
+                break
+            if attempt < 2:
+                time.sleep(1.5 * (attempt + 1))
+
         if not expirations:
-            options_error = "לא נמצאו אופציות סחירות עבור סימבול זה."
+            # קריטי להבחין בין "למניה אין אופציות" לבין "השליפה נכשלה".
+            # ההודעה הקודמת טענה את הראשון גם כשקרה השני, וזה מטעה.
+            options_error = (
+                "שרשרת האופציות לא הוחזרה מספק הנתונים. ייתכן שהגישה מוגבלת "
+                "כרגע, או שלמניה זו אין אופציות סחירות. נסה שוב בעוד מספר דקות."
+            )
         else:
             selected_expiry = _pick_nearest_expiration(tuple(expirations), target_date)
             chain = ticker.option_chain(selected_expiry)
