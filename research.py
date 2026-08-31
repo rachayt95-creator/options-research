@@ -141,6 +141,11 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
     except Exception:
         info = {}
 
+    # info מגיע מ-quoteSummary, ש-Yahoo מגביל מכתובות IP של ספקי ענן.
+    # history_metadata מגיע מנקודת הקצה של הגרף, שאינה מוגבלת, ומכסה
+    # את אותם שדות. בלעדיו שם החברה בייצור היה נופל חזרה לסימבול.
+    meta = getattr(ticker, "history_metadata", None) or {}
+
     last_close = _to_float(history["Close"].iloc[-1])
     price = _to_float(getattr(ticker.fast_info, "last_price", None)) or last_close
 
@@ -151,8 +156,12 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
         else None
     )
 
-    high_52w = _to_float(info.get("fiftyTwoWeekHigh")) or _to_float(history["High"].max())
-    low_52w = _to_float(info.get("fiftyTwoWeekLow")) or _to_float(history["Low"].min())
+    high_52w = (_to_float(info.get("fiftyTwoWeekHigh"))
+                or _to_float(meta.get("fiftyTwoWeekHigh"))
+                or _to_float(history["High"].max()))
+    low_52w = (_to_float(info.get("fiftyTwoWeekLow"))
+               or _to_float(meta.get("fiftyTwoWeekLow"))
+               or _to_float(history["Low"].min()))
 
     # תמיכה/התנגדות קצרות טווח: גבוה/נמוך של 3 החודשים האחרונים
     recent = history.tail(63)
@@ -161,8 +170,10 @@ def fetch_analysis(symbol: str, target_date: dt.date) -> dict[str, Any]:
 
     snapshot = {
         "symbol": symbol,
-        "name": info.get("shortName") or info.get("longName") or symbol,
-        "currency": info.get("currency", "USD"),
+        "name": (info.get("shortName") or info.get("longName")
+                 or meta.get("shortName") or meta.get("longName") or symbol),
+        "currency": info.get("currency") or meta.get("currency") or "USD",
+        "exchange": meta.get("fullExchangeName") or info.get("exchange") or "",
         "price": price,
         "change_pct": change_pct,
         "high_52w": high_52w,

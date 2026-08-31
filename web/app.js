@@ -209,7 +209,15 @@ el.histChips.addEventListener("click", (ev) => {
 
 // -------------------------------------------------- גרף TradingView
 
-function renderChart(symbol) {
+// TradingView פותר סימבול חשוף ברוב המקרים, אך קידומת בורסה אמינה יותר
+function tvSymbol(symbol, exchange) {
+  const ex = String(exchange || "");
+  if (/^Nasdaq/i.test(ex)) return `NASDAQ:${symbol}`;
+  if (/^NYSE$/i.test(ex) || /New York Stock Exchange/i.test(ex)) return `NYSE:${symbol}`;
+  return symbol;
+}
+
+function renderChart(symbol, exchange) {
   el.tv.innerHTML = "";
   if (!navigator.onLine) {
     el.tv.innerHTML = `<p class="tv-fallback">הגרף דורש חיבור לרשת.</p>`;
@@ -228,7 +236,7 @@ function renderChart(symbol) {
   // הווידג'ט קורא את הגדרותיו מגוף התגית, לא מ-attribute
   script.textContent = JSON.stringify({
     autosize: true,
-    symbol,
+    symbol: tvSymbol(symbol, exchange),
     interval: "D",
     timezone: "Asia/Jerusalem",
     theme: "dark",
@@ -296,7 +304,7 @@ async function analyze(ev) {
     renderEarnings(data.snapshot, data.expiry || data.requestedDate);
     renderLevels(data.levels);
     renderNews(data.news);
-    renderChart(symbol);
+    renderChart(symbol, data.snapshot.exchange);
     saveHistory(symbol);
 
     chainData = { calls:data.calls, puts:data.puts };
