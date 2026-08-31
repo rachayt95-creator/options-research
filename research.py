@@ -512,9 +512,11 @@ def _generate_report(prompt: str, api_key: str) -> str:
 
     # 503 UNAVAILABLE מ-Gemini הוא עומס רגעי ולא תקלה. שני ניסיונות
     # חוזרים חוסכים מהמשתמש כישלון שנפתר מעצמו תוך שניות.
+    # ניסיון חוזר אחד בלבד: על מכונה חלשה כל קריאה יקרה, ושרשרת ארוכה
+    # גורמת לבקשה להימשך דקות ולהיראות למשתמש ככישלון.
     response = None
     last_error: Exception | None = None
-    for attempt in range(3):
+    for attempt in range(2):
         try:
             response = _call_gemini(client, prompt)
             break
@@ -522,11 +524,11 @@ def _generate_report(prompt: str, api_key: str) -> str:
             last_error = exc
             if "503" not in str(exc) and "UNAVAILABLE" not in str(exc):
                 raise
-            if attempt < 2:
-                time.sleep(2 * (attempt + 1))
+            if attempt == 0:
+                time.sleep(2)
     if response is None:
         raise LLMError(
-            "Gemini עמוס כרגע ולא הגיב אחרי שלושה ניסיונות. נסה שוב בעוד רגע."
+            "Gemini עמוס כרגע. נסה שוב בעוד רגע — זה בדרך כלל חולף תוך שניות."
         ) from last_error
 
     text = (response.text or "").strip()

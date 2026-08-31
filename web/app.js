@@ -285,6 +285,14 @@ function renderChart(symbol, exchange) {
 
 async function loadReport(symbol, date) {
   el.aiBody.innerHTML = skeleton(5);
+
+  // הפקת הדוח אורכת עשרות שניות. בלי חיווי, ההמתנה נראית כמו תקיעה.
+  const note = document.createElement("p");
+  note.className = "muted tiny";
+  note.style.marginTop = ".8rem";
+  note.textContent = "Gemini מנתח את הנתונים — עד כדקה.";
+  el.aiBody.appendChild(note);
+
   try {
     const res = await fetch(`api/report?symbol=${encodeURIComponent(symbol)}&date=${date}`);
     const j = await res.json();
